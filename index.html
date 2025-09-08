@@ -1,0 +1,87 @@
+<html>
+  <head>
+    <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.159.0/examples/js/controls/OrbitControls.js"></script>
+  </head>
+  <body>
+    <a-scene>
+        <a-assets>
+            <img id="sky" src="panorama4.png">
+            <img id="groundTexture" src="grass.png">
+        </a-assets>
+
+        <a-box id="player" 
+                position="0 0.5 0" 
+                rotation="0 -90 0" 
+                color="#4CC3D9" 
+                smooth-movement>
+            <a-entity id="rig" position="5 5 0" rotation="-30 90 0">
+                <a-entity id="camera" camera look-controls></a-entity>
+            </a-entity>
+        </a-box>
+        <a-plane position="0 0 -4" 
+                rotation="-90 0 0" 
+                width="10" 
+                height="10" 
+                src="#groundTexture"></a-plane>
+        <a-sky src="#sky" 
+                rotation="0 -90 0"></a-sky>
+
+    </a-scene>
+    <script>
+        AFRAME.registerComponent('smooth-movement', {
+        schema: {
+          accel: {type: 'number', default: 0.002},   // accélération
+          decel: {type: 'number', default: 0.95},   // facteur de freinage (0.95 = glisse)
+          maxSpeed: {type: 'number', default: 0.1}  // vitesse max
+        },
+        init: function () {
+          this.keys = {};
+          this.velocity = new THREE.Vector3();
+
+          window.addEventListener('keydown', e => { this.keys[e.code] = true; });
+          window.addEventListener('keyup', e => { this.keys[e.code] = false; });
+        },
+        tick: function () {
+            let accel = this.data.accel;
+            let maxSpeed = this.data.maxSpeed;
+
+            let pos = this.el.object3D.position;
+
+            // accélération selon les touches
+            if (this.keys['KeyW']) this.velocity.z -= accel;
+            if (this.keys['KeyS']) this.velocity.z += accel;
+            if (this.keys['KeyA']) this.velocity.x -= accel;
+            if (this.keys['KeyD']) this.velocity.x += accel;
+
+            // saut uniquement quand au sol (y = 0.5)
+            if (pos.y <= 0.5 && this.keys['Space']) {
+                this.velocity.y = 0.05; // impulsion de saut
+            }
+
+            // gravité quand on est en l’air
+            if (pos.y > 0.5) {
+                this.velocity.y -= 0.002; // gravité
+            }
+
+            // éviter de passer sous le sol
+            if (pos.y <= 0.5 && this.velocity.y < 0) {
+                pos.y = 0.5;
+                this.velocity.y = 0;
+            }
+
+            // limiter la vitesse max (x et z)
+            this.velocity.x = Math.max(Math.min(this.velocity.x, maxSpeed), -maxSpeed);
+            this.velocity.z = Math.max(Math.min(this.velocity.z, maxSpeed), -maxSpeed);
+
+            // freinage progressif (x et z uniquement)
+            this.velocity.x *= this.data.decel;
+            this.velocity.z *= this.data.decel;
+
+            // mise à jour position
+            pos.add(this.velocity);
+            }
+      });
+    </script>
+  </body>
+</html>
