@@ -10,14 +10,15 @@
             <img id="groundTexture" src="grass.png">
         </a-assets>
 
+
+        <a-entity id="rig" follow-target="target: #player" position="5 5 0">
+                <a-entity id="camera" camera look-controls></a-entity>
+        </a-entity>
         <a-box id="player" 
                 position="0 0.5 0" 
                 rotation="0 -90 0" 
                 color="#4CC3D9" 
                 smooth-movement>
-            <a-entity id="rig" position="5 5 0" rotation="-30 90 0">
-                <a-entity id="camera" camera look-controls></a-entity>
-            </a-entity>
         </a-box>
         <a-plane position="0 0 -4" 
                 rotation="-90 0 0" 
@@ -29,6 +30,14 @@
 
     </a-scene>
     <script>
+        AFRAME.registerComponent('follow-target', {
+        schema: {target: {type: 'selector'}},
+        tick: function () {
+          if (!this.data.target) return;
+          this.el.object3D.position.copy(this.data.target.object3D.position);
+        }
+        });
+
         AFRAME.registerComponent('smooth-movement', {
         schema: {
           accel: {type: 'number', default: 0.002},   // accélération
