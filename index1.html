@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Exercice 6</title>
+  <script src="https://aframe.io/releases/0.9.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-physics-system@3.3.0/dist/aframe-physics-system.min.js"></script>
+
+  <script>
+    AFRAME.registerComponent('player-controls', {
+      schema: {
+        speed: {type: 'number', default: 8},
+        jumpForce: {type: 'number', default: 5},
+        acceleration: {type: 'number', default: 25},
+        deceleration: {type: 'number', default: 12}
+      },
+      init: function () {
+        this.vel = new THREE.Vector3();
+        this.keys = {};
+        this.canJump = false;
+        this.body = null;
+
+        window.addEventListener('keydown', e => this.keys[e.code] = true);
+        window.addEventListener('keyup',   e => this.keys[e.code] = false);
+
+        this.el.addEventListener('body-loaded', () => { this.body = this.el.body; });
+
+        this.el.addEventListener('collide', e => {
+          const other = e.detail && e.detail.body && e.detail.body.el;
+          if (other && other.classList && other.classList.contains('ground')) {
+            this.canJump = true;
+          }
+        });
+      },
+      tick: function (t, dtMs) {
+        if (!this.body) return;
+        const dt = dtMs / 1000;
+
+        const dir = new THREE.Vector3(
+          (this.keys['KeyA'] ? -1 : 0) + (this.keys['KeyD'] ? 1 : 0),
+          0,
+          (this.keys['KeyW'] ? -1 : 0) + (this.keys['KeyS'] ? 1 : 0)
+        );
+        if (dir.lengthSq() > 0) dir.normalize();
+
+        if (dir.lengthSq() > 0) {
+          this.vel.x += dir.x * this.data.acceleration * dt;
+          this.vel.z += dir.z * this.data.acceleration * dt;
+        } else {
+          this.vel.x -= this.vel.x * this.data.deceleration * dt;
+          this.vel.z -= this.vel.z * this.data.deceleration * dt;
+        }
+
+        const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+        this.vel.x = clamp(this.vel.x, -this.data.speed, this.data.speed);
+        this.vel.z = clamp(this.vel.z, -this.data.speed, this.data.speed);
+
+        this.body.velocity.set(this.vel.x, this.body.velocity.y, this.vel.z);
+
+        if (this.keys['Space'] && this.canJump) {
+          this.body.velocity.y = this.data.jumpForce;
+          this.canJump = false;
+        }
+      }
+    });
+  </script>
+</head>
+<body>
+  <a-scene physics="gravity: -9.8" background="color: #ECECEC">
+    <a-plane class="ground" static-body rotation="-90 0 0" width="60" height="60" src="grass.png"></a-plane>
+
+    <a-sky src="panorama4.png"></a-sky>
+
+    <a-entity camera position="0 8 12" rotation="-25 0 0"></a-entity>
+
+    <a-box id="player" position="0 0.5 0" width="1" height="1" depth="1" color="white"
+           dynamic-body="mass:1; friction:0.8; restitution:0.1; linearDamping:0.05; angularDamping:0.99"
+           player-controls></a-box>
+
+    <a-box position=" 3 0.5  0" width="1" height="1" depth="1" color="green"
+           dynamic-body="mass:1; friction:0.8; restitution:0.1; linearDamping:0.05; angularDamping:0.99"></a-box>
+    <a-box position="-3 0.5  0" width="1" height="1" depth="1" color="yellow"
+           dynamic-body="mass:1; friction:0.8; restitution:0.1; linearDamping:0.05; angularDamping:0.99"></a-box>
+    <a-box position=" 0 0.5  3" width="1" height="1" depth="1" color="blue"
+           dynamic-body="mass:1; friction:0.8; restitution:0.1; linearDamping:0.05; angularDamping:0.99"></a-box>
+    <a-box position=" 0 0.5 -3" width="1" height="1" depth="1" color="purple" dynamic-body="mass:1; friction:0.8; restitution:0.1; linearDamping:0.05; angularDamping:0.99"></a-box>
+  </a-scene>
+    <nav style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 10;
+        background: rgba(0,0,0,0.6);
+        padding: 10px;
+        border-bottom-right-radius: 8px;
+        ">
+        <a href="index.html" style="color: white; margin-right: 10px; text-decoration: none;">Exercice 1 2 3 4</a>
+        <a href="index1.html" style="color: white; text-decoration: none;">Exercice 5 6</a>
+    </nav>
+</body>
+</html>
